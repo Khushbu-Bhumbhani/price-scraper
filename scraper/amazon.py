@@ -1,23 +1,10 @@
-import asyncio
 import re
 from typing import Optional
 
-import aiohttp
 from bs4 import BeautifulSoup
 
 from models.products import ProductDetails
-
-
-USER_AGENT = (
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-    "AppleWebKit/537.36 (KHTML, like Gecko) "
-    "Chrome/122.0.0.0 Safari/537.36"
-)
-
-HEADERS = {
-    "User-Agent": USER_AGENT,
-    "Accept-Language": "en-US,en;q=0.9",
-}
+from scraper.fetcher import fetch_html
 
 
 def _clean_text(value: Optional[str]) -> Optional[str]:
@@ -75,22 +62,5 @@ def parse_product_details(html: str) -> ProductDetails:
 
 
 async def fetch_product_details(url: str, timeout: int = 20) -> ProductDetails:
-    client_timeout = aiohttp.ClientTimeout(total=timeout)
-
-    async with aiohttp.ClientSession(headers=HEADERS, timeout=client_timeout) as session:
-        async with session.get(url) as response:
-            response.raise_for_status()
-            html = await response.text()
-            return parse_product_details(html)
-
-
-async def main(url: str) -> None:
-    details = await fetch_product_details(url)
-    print(f"Title: {details.title}")
-    print(f"Price: {details.price}")
-    print(f"Rating: {details.rating}")
-
-
-if __name__ == "__main__":
-    amazon_url = input("Enter Amazon product URL: ").strip()
-    asyncio.run(main(amazon_url))
+    html = await fetch_html(url=url, timeout=timeout, retries=3)
+    return parse_product_details(html)
