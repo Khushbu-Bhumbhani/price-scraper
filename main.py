@@ -1,31 +1,41 @@
-import asyncio
 import sys
-from pathlib import Path
+import asyncio
+from urllib.parse import urlparse
+from scraper.fetcher import fetch_html
 
+def is_valid_url(url:str)->bool:
+    parsed_url=urlparse(url)
+    return all([parsed_url.scheme,parsed_url.netloc])
 
-PROJECT_ROOT = Path(__file__).resolve().parent
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
-
-from services.price_tracker import track_product_price
-
-
-async def run(url: str) -> None:
-    result = await track_product_price(url)
-    print(f"Title: {result.title}")
-    print(f"Price: {result.price}")
-    print(f"Rating: {result.rating}")
-    if result.previous_price:
-        print(f"Previous Price: {result.previous_price}")
-    if result.alert_message:
-        print(f"ALERT: {result.alert_message}")
-    else:
-        print("ALERT: No price drop detected.")
-
-
-def get_product_url() -> str:
-    return sys.argv[1] if len(sys.argv) > 1 else input("Enter Amazon product URL: ").strip()
-
+def get_url_input() -> str:
+    """
+        Gets product URL from CLI argument or user input.
+ 
+    Returns:
+        str: Valid product URL
+    """
+    if len(sys.argv) > 1:
+        url= sys.argv[1]
+        if is_valid_url(url):
+            return url
+        else:
+            raise ValueError("Invalid url provided in command line")
+    
+    while True:
+      url=input("Enter Product URL:").strip()
+      if is_valid_url(url):
+          return url
+      
+      print(" ❌ Invalid URL. Example: https://www.amazon.in/dp/XXXXX")
+      
+def main():
+    url=get_url_input()
+    
+    #html=fetch_html(url)
+    html= asyncio.run(fetch_html(url))
+    
+    print(html[:500])
+    
 
 if __name__ == "__main__":
-    asyncio.run(run(get_product_url()))
+    main()

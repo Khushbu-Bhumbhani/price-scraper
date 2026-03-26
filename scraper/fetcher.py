@@ -1,41 +1,26 @@
-import asyncio
-
 import aiohttp
 
-
-USER_AGENT = (
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-    "AppleWebKit/537.36 (KHTML, like Gecko) "
-    "Chrome/122.0.0.0 Safari/537.36"
-)
-
-DEFAULT_HEADERS = {
-    "User-Agent": USER_AGENT,
-    "Accept-Language": "en-US,en;q=0.9",
+HEADERS={
+    "User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
 }
 
+async def fetch_html(url:str)->str:
+    """Fetch html content of url
 
-async def fetch_html(
-    url: str,
-    retries: int = 3,
-    timeout: int = 20,
-    retry_delay: float = 1.0,
-) -> str:
-    last_error: Exception | None = None
-    client_timeout = aiohttp.ClientTimeout(total=timeout)
+    Args:
+        url (str): Target webpage url
 
-    async with aiohttp.ClientSession(headers=DEFAULT_HEADERS, timeout=client_timeout) as session:
-        for attempt in range(1, retries + 1):
-            try:
-                async with session.get(url) as response:
-                    response.raise_for_status()
-                    return await response.text()
-            except (aiohttp.ClientError, asyncio.TimeoutError) as error:
-                last_error = error
-                if attempt == retries:
-                    break
-                await asyncio.sleep(retry_delay)
-
-    if last_error is not None:
-        raise last_error
-    raise RuntimeError("Failed to fetch HTML.")
+    Returns:
+        str: HTML content of page
+    """
+    timeout=aiohttp.ClientTimeout(total=60)
+    #open session
+    async with aiohttp.ClientSession(headers=HEADERS,timeout=timeout) as session:
+        # make the request
+        async with session.get(url) as response:
+            #read the body
+            if response.status != 200:
+                raise Exception(f"Failed to fetch url: {url}, Status code: {response.status}")
+            return await response.text()
+ 
+       
