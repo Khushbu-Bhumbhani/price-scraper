@@ -2,6 +2,8 @@ import sys
 import asyncio
 from urllib.parse import urlparse
 from scraper.fetcher import fetch_html
+from models.products import ProductDetails
+from scraper.amazon import parse_product
 
 def is_valid_url(url:str)->bool:
     parsed_url=urlparse(url)
@@ -34,7 +36,9 @@ def main():
     #html=fetch_html(url)
     html= asyncio.run(fetch_html(url))
     
-    print(html[:500])
+    #print(html[:500])
+    pd=parse_product(html)
+    print(pd)
     
 
 if __name__ == "__main__":
