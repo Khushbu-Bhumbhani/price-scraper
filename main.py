@@ -4,6 +4,7 @@ from urllib.parse import urlparse
 from scraper.fetcher import fetch_html
 from models.products import ProductDetails
 from scraper.amazon import parse_product
+from database.db import Database
 
 def is_valid_url(url:str)->bool:
     parsed_url=urlparse(url)
@@ -31,14 +32,28 @@ def get_url_input() -> str:
       print(" ❌ Invalid URL. Example: https://www.amazon.in/dp/XXXXX")
       
 def main():
+    db=Database()
+    db.create_table()
+    
     url=get_url_input()
     
     #html=fetch_html(url)
     html= asyncio.run(fetch_html(url))
     
     #print(html[:500])
+    
     pd=parse_product(html)
-    print(pd)
+    
+    db.save_product(url,pd)
+    
+    products=db.get_all_products()
+    for p in products:
+        print(p)
+    
+    #print(f"Title: {pd.title}")
+    #print(f"Price: {pd.price}")
+    #print(f"Ratings: {pd.rating}")
+    
     
 
 if __name__ == "__main__":
