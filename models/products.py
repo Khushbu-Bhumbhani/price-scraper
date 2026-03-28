@@ -5,5 +5,5 @@ from typing import Optional
 @dataclass(slots=True)
 class ProductDetails:
     title: Optional[str]
-    price: Optional[str]
-    rating: Optional[str]
+    price: Optional[float]
+    ratings: Optional[float]
