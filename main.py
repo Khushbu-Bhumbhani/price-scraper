@@ -7,6 +7,7 @@ from scraper.amazon import parse_product
 from database.db import Database
 from services.price_tracker import PriceTracker
 import time
+from services.email_service import send_email
 
 def is_valid_url(url:str)->bool:
     #print(url)
@@ -59,9 +60,20 @@ def main():
             db.save_product(url,pd)
             
             time.sleep(2)
-        # print(f"Status:{result['status']}")
-            for k,v in result.items():
-                print(f"{k.upper():<10}:{v}")
+        print(f"Status:{result['status']}")
+        
+        if result['status']=="dropped":
+            send_email(
+                subject="🔥 Price Dropped!",
+                body=f"Old Price: ₹{result['old_price']} → New Price: ₹{result['new_price']}"
+            )
+        elif result['status'] == "increased":
+            send_email(
+                subject="📈 Price increased",
+                body=f"Old Price: ₹{result['old_price']} → New Price: ₹{result['new_price']}"
+            )
+          #  for k,v in result.items():
+           #     print(f"{k.upper():<10}:{v}")
            
     finally:
         db.close()
