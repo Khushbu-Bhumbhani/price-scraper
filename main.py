@@ -63,14 +63,33 @@ def main():
         print(f"Status:{result['status']}")
         
         if result['status']=="dropped":
+            
             send_email(
-                subject="🔥 Price Dropped!",
-                body=f"Old Price: ₹{result['old_price']} → New Price: ₹{result['new_price']}"
+                subject=f"🔥 Price Drop: {pd.title[:50]}",
+                body=f"""
+                🔥 Price Dropped!
+                
+                {pd.title}
+                
+                Old Price: ₹{result['old_price']}
+                New Price: ₹{result['new_price']}
+                Drop Percent: {result['change_percent']}:.2f%
+                Link: {url}
+                """
             )
         elif result['status'] == "increased":
             send_email(
                 subject="📈 Price increased",
-                body=f"Old Price: ₹{result['old_price']} → New Price: ₹{result['new_price']}"
+                body=f"""
+                📈 Price increased
+                
+                {pd.title}
+                
+                Old Price: ₹{result['old_price']}
+                New Price: ₹{result['new_price']}
+                Change Percent: {result['change_percent']}:.2f%
+                Link: {url}
+                """
             )
           #  for k,v in result.items():
            #     print(f"{k.upper():<10}:{v}")

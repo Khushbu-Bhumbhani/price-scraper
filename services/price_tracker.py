@@ -12,9 +12,11 @@ class PriceTracker:
             if product.price < latest_price:
                 print("🔥 PRICE DROPPED!")
                 status="dropped"
+                change_percent=((latest_price-product.price)/latest_price)*100
             elif product.price > latest_price:
                 print("📈 Price increased")
                 status="increased"
+                change_percent=((product.price-latest_price)/latest_price)*100
             else:
                 print("Same Price")
         else:
@@ -23,7 +25,8 @@ class PriceTracker:
         return {
             "status":status,
             "old_price":latest_price,
-            "new_price":product.price
+            "new_price":product.price,
+            "change_percent": change_percent
         }
     
     
