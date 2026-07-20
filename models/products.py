@@ -6,4 +6,4 @@ from typing import Optional
 class ProductDetails:
     title: Optional[str]
     price: Optional[float]
-    ratings: Optional[float]
+    status: Optional[str]

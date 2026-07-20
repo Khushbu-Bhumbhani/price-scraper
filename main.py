@@ -53,7 +53,7 @@ def run_tracker(urls:str):
     try:
 
         for url in urls:
-            html = asyncio.run(retry_async(fetch_html,url))
+            html = asyncio.run(retry_async(fetch_html,3,2,url))
 
             pd = parse_product(html)
 
@@ -63,35 +63,7 @@ def run_tracker(urls:str):
             time.sleep(2)
             print(f"Status:{result['status']}")
 
-            if result["status"] == "dropped":
-
-                send_email(
-                    subject=f"🔥 Price Drop: {pd.title[:50]}",
-                    body=f"""
-                    🔥 Price Dropped!
-                    
-                    {pd.title}
-                    
-                    Old Price: ₹{result['old_price']}
-                    New Price: ₹{result['new_price']}
-                    Drop Percent: {result['change_percent']}:.2f%
-                    Link: {url}
-                    """,
-                )
-            elif result["status"] == "increased":
-                send_email(
-                    subject="📈 Price increased",
-                    body=f"""
-                    📈 Price increased
-                    
-                    {pd.title}
-                    
-                    Old Price: ₹{result['old_price']}
-                    New Price: ₹{result['new_price']}
-                    Change Percent: {result['change_percent']}:.2f%
-                    Link: {url}
-                    """,
-                )
+           
     except Exception as e:
         print(f"Exception in main:{e}")
    
