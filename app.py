@@ -1,6 +1,6 @@
 import streamlit as st
 import asyncio
-from scraper.amazon import parse_product
+from scraper.amazon_parser import parse_product
 from utils.retry import retry_async
 from scraper.fetcher import fetch_html
 from services.price_tracker import track_price
@@ -9,14 +9,16 @@ from database.db import get_all_products, delete_product
 import pandas as pd
 import traceback
 import logging
+from datetime import datetime
+
 
 
 # =========================
 #  SETUP
 # =========================
 st.set_page_config(page_title="Price Tracker", layout="wide")
-st.markdown("## 📦 Price Tracker Dashboard")
-st.caption("Track Amazon product prices with alerts")
+st.title("📦 Price Tracker Dashboard")
+st.caption("Monitor Amazon product prices and receive alerts when prices change.")
 logging.basicConfig(level=logging.INFO)
 
 create_table()
@@ -47,8 +49,16 @@ if track_btn:
                 product = parse_product(html)
 
                 track_price(product, url)
+                #st.write(get_all_products())
+                st.success("✅ Product added successfully!")
 
-                st.success(f"Tracking: {product.title}")
+                col1, col2 = st.columns([5, 1])
+
+                with col1:
+                  st.markdown(f"**{product.title}**")
+
+                with col2:
+                    st.metric("Current Price", f"₹{product.price:,.0f}")
                 st.write(f"Price: ₹{product.price}")
             except Exception as e:
                 st.error(f"Error:{e}")
@@ -57,7 +67,8 @@ if track_btn:
 # =========================
 # TABLE SECTION
 # =========================
-st.markdown("### 📊 Tracked Products")
+st.markdown("## 📈 Tracked Products")
+st.caption("Monitor price history for all tracked products.")
 
 products = get_all_products()
 
@@ -73,29 +84,54 @@ if products:
     for product_id, group in grouped:
         group = group.sort_values("Last Updated", ascending=False)
         latest = group.iloc[0]
+        dt = datetime.fromisoformat(latest["Last Updated"])
 
-        with st.container():
-            st.markdown(f"### 📦 {latest['Title']}")
-            st.markdown(f"🔗 [Open Product]({latest['URL']})")
+        with st.container(border=True):
 
-            status = latest["Status"]
-            price = latest["Price"]
+            col1, col2 = st.columns([6,1])
 
-            if status == "DOWN":
-                st.success(f"⬇️ Price Dropped: ₹{price}")
-            elif status == "UP":
-                st.error(f"⬆️ Price Increased: ₹{price}")
-            else:
-                st.info(f"➖ No Change: ₹{price}")
+            with col1:
+                title = latest["Title"]
+
+                if len(title) > 90:
+                    title = title[:90] + "..."
+
+                st.markdown(f"### 📦 {title}")
+                st.markdown(f"🔗 [Open Product]({latest['URL']})")
+
+            with col2:
+                if st.button("🗑 Delete", key=f"del_{product_id}"):
+                    delete_product(latest["URL"])
+                    st.rerun()
+
+
+            c1, c2, c3 = st.columns(3)
+
+            with c1:
+                st.metric("Current Price", f"₹{latest['Price']:,.0f}")
+
+            with c2:
+                emoji = {
+                    "dropped":"🟢",
+                    "increased":"🔴",
+                    "no_change":"🔵",
+                    "same":"🔵"
+                }.get(latest["Status"],"⚪")
+
+                st.metric("Status", f"{emoji} {latest['Status'].replace('_',' ').title()}")
+
+            with c3:
+                st.metric("Last Checked",  dt.strftime("%d %b %I:%M %p")[:16])
 
             chart_df = group.sort_values("Last Updated")
-            st.line_chart(chart_df.set_index("Last Updated")["Price"])
 
-            if st.button(f"🗑 Delete", key=f"del_{product_id}"):
-                delete_product(latest["URL"])
-                st.rerun()
-
-            st.divider()
+            if len(chart_df) > 1:
+                st.line_chart(
+                    chart_df.set_index("Last Updated")["Price"],
+                    height=220
+                )
+            else:
+                st.info("Track this product again to build price history.")
         
 else:
     st.info("No products tracked yet")
@@ -122,8 +158,16 @@ if run_btn:
             product = parse_product(html)
 
             track_price(product, url)
+           # st.write(get_all_products())
+            st.success("✅ Product added successfully!")
 
-            st.success(f"Tracking: {product.title}")
+            col1, col2 = st.columns([5, 1])
+
+            with col1:
+                st.markdown(f"**{product.title}**")
+
+            with col2:
+                st.metric("Current Price", f"₹{product.price:,.0f}")
             st.write(f"Price: ₹{product.price}")
         except Exception as e:
             st.error(f"Error:{e}")

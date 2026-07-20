@@ -2,10 +2,11 @@ from models.products import ProductDetails
 from database.db import get_or_create_product
 from database.db import get_last_price
 from services.email_service import send_email
+from database.db import save_price_history
 
 
 def track_price(product: ProductDetails, url: str):
-    product_id = get_or_create_product(url, product)
+    product_id = get_or_create_product(url, product.title)
     latest_price = get_last_price(product_id)
     status = "same"
     change_percent = "0.0%"
@@ -50,7 +51,8 @@ def track_price(product: ProductDetails, url: str):
             status = "no_change"
     else:
         print("First time tracking")
-   
+    product.status=status
+    save_price_history(product_id, product)
     return {
         "status": status,
         "old_price": latest_price,

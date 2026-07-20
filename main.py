@@ -3,7 +3,7 @@ import asyncio
 from urllib.parse import urlparse
 from scraper.fetcher import fetch_html
 from models.products import ProductDetails
-from scraper.amazon import parse_product
+from scraper.amazon_parser import parse_product
 from services.price_tracker import track_price
 import time
 from services.email_service import send_email

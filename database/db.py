@@ -75,7 +75,7 @@ def save_price_history(product_id, pd: ProductDetails):
     cursor = conn.cursor()
     cursor.execute(
         """INSERT INTO price_history (product_id,price,status,created_at) 
-        VALUES (?,?,?,?,?)
+        VALUES (?,?,?,?)
     """,
         (product_id, pd.price, pd.status, datetime.now().isoformat()),
     )
