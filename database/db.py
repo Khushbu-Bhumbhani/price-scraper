@@ -129,7 +129,7 @@ def delete_product(url: str):
         product_id=result[0]
         #delete price history first
         cusror.execute(
-           """DELETE FROM price_history WHERE product_id = ?"
+           """DELETE FROM price_history WHERE product_id = ?
             """,
         (product_id,),
          )
