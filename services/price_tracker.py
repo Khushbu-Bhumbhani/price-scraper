@@ -3,7 +3,9 @@ from database.db import get_or_create_product
 from database.db import get_last_price
 from services.email_service import send_email
 from database.db import save_price_history
+import logging
 
+logger = logging.getLogger(__name__)
 
 def track_price(product: ProductDetails, url: str):
     product_id = get_or_create_product(url, product.title)
@@ -12,7 +14,6 @@ def track_price(product: ProductDetails, url: str):
     change_percent = "0.0"
     if latest_price is not None:
         if product.price < latest_price:
-            print("🔥 PRICE DROPPED!")
             status = "dropped"
             change_percent = ((latest_price - product.price) / latest_price) * 100
             send_email(
@@ -22,14 +23,17 @@ def track_price(product: ProductDetails, url: str):
                     
                     {product.title}
                     
-                    Old Price: ₹{product.price}
-                    New Price: ₹{latest_price}
+                    Old Price: ₹{latest_price}
+                    New Price: ₹{product.price}
                     Change Percent: {change_percent:.2f}%
                     Link: {url}
                     """,
                 )
-        elif product.price > latest_price:
-            print("📈 Price increased")
+            logger.info("Price dropped for '%s': ₹%.2f -> ₹%.2f",
+            product.title,
+            latest_price,
+            product.price)
+        elif product.price > latest_price:  
             status = "increased"
             change_percent = ((product.price - latest_price) / latest_price) * 100
             
@@ -40,17 +44,22 @@ def track_price(product: ProductDetails, url: str):
                     
                     {product.title}
                     
-                    Old Price: ₹{product.price}
-                    New Price: ₹{latest_price}
+                    Old Price: ₹{latest_price}
+                    New Price: ₹{product.price}
                     Drop Percent: {change_percent:.2f}%
                     Link: {url}
                     """,
                 )
+            logger.info("Price increased for '%s': ₹%.2f -> ₹%.2f",
+            product.title,
+            latest_price,
+            product.price)
         else:
-            print("Same Price")
             status = "no_change"
+            logger.info("No price change for '%s'", product.title)
     else:
-        print("First time tracking")
+        logger.info("Started tracking '%s'", product.title)
+        
     
     # Always set the calculated tracking status before saving
 

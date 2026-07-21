@@ -7,17 +7,18 @@ from services.price_tracker import track_price
 from database.db import create_table
 from database.db import get_all_products, delete_product
 import pandas as pd
-import traceback
-import logging
 from datetime import datetime
+from utils.logger import setup_logger
+import logging
 
 # =========================
 #  SETUP
 # =========================
+setup_logger()
+logger = logging.getLogger(__name__)
 st.set_page_config(page_title="Price Tracker", layout="wide")
 st.title("📦 Price Tracker Dashboard")
 st.caption("Monitor Amazon product prices and receive alerts when prices change.")
-logging.basicConfig(level=logging.INFO)
 
 create_table()
 
@@ -39,7 +40,7 @@ if track_btn:
     # st.success("Product Added")
     if url:
         with st.spinner("Fetching Product...."):
-            logging.info("Fetching product")
+            logger.info("Fetching product: %s", url)
             try:
 
                 html = asyncio.run(retry_async(fetch_html, 3, 2, url))
@@ -47,10 +48,15 @@ if track_btn:
                 product = parse_product(html)
                 if product.price is None:
                     st.warning(f"⚠️ Could not fetch price for: {product.title or url}")
+                    logger.warning(
+                        "Price unavailable for '%s'",
+                        product.title or url,
+                    )
                 else:
                     track_price(product, url)
                     # st.write(get_all_products())
                     st.success("✅ Product added successfully!")
+                    logger.info("Product added successfully '%s'", product.title)
 
                     col1, col2 = st.columns([5, 1])
 
@@ -61,8 +67,9 @@ if track_btn:
                         st.metric("Current Price", f"₹{product.price:,.0f}")
                 #  st.write(f"Price: ₹{product.price}")
             except Exception as e:
-                st.error(f"Error:{e}")
-                st.text(traceback.format_exc())
+                st.error("Failed to track product")
+                # st.text(traceback.format_exc())
+                logger.exception(f"Error:{e}")
 
 # =========================
 # TABLE SECTION
@@ -103,6 +110,7 @@ if products:
 
             with col3:
                 if st.button("🗑 Delete", key=f"del_{product_id}"):
+                    logger.info("Deleting product: %s", latest["Title"])
                     delete_product(latest["URL"])
                     st.rerun()
 
@@ -150,7 +158,7 @@ if products:
                     inplace=True,
                 )
 
-                st.dataframe(history, use_container_width=True, hide_index=True)
+                st.dataframe(history, width="stretch", hide_index=True)
 
 else:
     st.info("No products tracked yet")
@@ -181,11 +189,12 @@ if run_btn:
     total = len(products)
     updated = 0
     unavailable = 0
+    logger.info("Updating %d tracked products", total)
     for index, p in enumerate(products):
 
         url = p[1]
-
-        status_text.write(f"Checking product {index + 1} of {total}...")
+        logger.info("Checking latest price for %s", url)
+        status_text.write(f"Checking latest price for product {index + 1} of {total}...")
 
         try:
             html = asyncio.run(retry_async(fetch_html, 3, 2, url))
@@ -195,12 +204,21 @@ if run_btn:
             if product.price is None:
                 unavailable += 1
                 st.warning(f"⚠️ Currently unavailable: {product.title or url}")
+                logger.warning(
+                    "Product unavailable: %s",
+                    product.title or url,
+                )
                 continue
 
             track_price(product, url)
+            logger.info(
+                "Updated '%s' successfully",
+                product.title,
+            )
             updated += 1
         except Exception as e:
-            st.warning(f"⚠️ Could not update product: {e}")
+            logger.exception(f"⚠️ Could not update product: {e}")
+            st.warning("Failed to update %s", url)
 
         finally:
             progress_bar.progress((index + 1) / total)
@@ -209,6 +227,11 @@ if run_btn:
         f"✅ Update complete — {total} checked • "
         f"{updated} updated • {unavailable} unavailable"
     )
-
+    logger.info(
+        "Update completed: %d checked, %d updated, %d unavailable",
+        total,
+        updated,
+        unavailable,
+    )
     if st.button("Refresh Dashboard"):
         st.rerun()

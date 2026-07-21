@@ -1,7 +1,9 @@
 import sqlite3
 from datetime import datetime
 from models.products import ProductDetails
+import logging
 
+logger = logging.getLogger(__name__)
 DB_NAME = "products.db"
 
 
@@ -67,6 +69,7 @@ def get_or_create_product(url, title):
         product_id = cursor.lastrowid
     conn.commit()
     conn.close()
+    logger.info("Saved product %s", title)
     return product_id
 
 
@@ -81,6 +84,7 @@ def save_price_history(product_id, pd: ProductDetails):
     )
     conn.commit()
     conn.close()
+    logger.info("Saved price history for product_id=%s", product_id)
 
 
 def get_last_price(product_id):
@@ -141,3 +145,4 @@ def delete_product(url: str):
         
     conn.commit()
     conn.close()
+    logger.info("Deleted product %s", url)

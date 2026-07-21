@@ -6,11 +6,12 @@ from models.products import ProductDetails
 from scraper.amazon_parser import parse_product
 from services.price_tracker import track_price
 import time
-from services.email_service import send_email
 from utils.retry import retry_async
 from utils.logger import setup_logger
 from database.db import create_table
-from database.db import save_product
+import logging
+
+logger = logging.getLogger(__name__)
 
 def is_valid_url(url: str) -> bool:
     # print(url)
@@ -47,7 +48,7 @@ def get_url_input() -> list[str]:
         print(" ❌ Invalid URL. Example: https://www.amazon.in/dp/XXXXX")
 
 
-def run_tracker(urls:str):
+def run_tracker(urls: list[str]) -> None:
     
     create_table()
     try:
@@ -66,6 +67,7 @@ def run_tracker(urls:str):
            
     except Exception as e:
         print(f"Exception in main:{e}")
+        logger.exception("Tracking failed")
    
 
 def main():
